@@ -1,0 +1,1 @@
+the knowledge directory is for ai agents to store context about the project

@@ -1,0 +1,1 @@
+ - regularly update the knowledge directory with key findings and the state of the project as a whole.
