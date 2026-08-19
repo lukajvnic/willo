@@ -2443,6 +2443,73 @@ button { font: inherit; color: inherit; }
   color: var(--ink-soft);
 }
 
+.ac-crop-veil {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(10, 9, 8, 0.72);
+  backdrop-filter: blur(2px);
+  z-index: 40;
+  padding: 20px;
+}
+
+.ac-crop-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 22px;
+  border-radius: var(--radius-panel);
+  background: var(--dune);
+  border: 1px solid var(--line);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+.ac-crop-title {
+  margin: 0;
+  align-self: flex-start;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.ac-crop-box {
+  position: relative;
+  width: 260px;
+  height: 260px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--black);
+  cursor: grab;
+  touch-action: none;
+}
+
+.ac-crop-box:active { cursor: grabbing; }
+
+.ac-crop-box img {
+  position: absolute;
+  left: 0;
+  top: 0;
+  max-width: none;
+  user-select: none;
+  pointer-events: none;
+}
+
+.ac-crop-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 999px rgba(18, 17, 16, 0.55);
+  outline: 2px solid rgba(255, 255, 255, 0.75);
+  outline-offset: -2px;
+  pointer-events: none;
+}
+
+.ac-crop-zoom { width: 260px; accent-color: var(--ink); }
+
+.ac-crop-actions { display: flex; gap: 8px; align-self: flex-end; }
+
 @media (max-width: 860px) {
   .maker-grid { grid-template-columns: minmax(0, 1fr); gap: 20px; }
   .ac-rig { max-width: 420px; }
