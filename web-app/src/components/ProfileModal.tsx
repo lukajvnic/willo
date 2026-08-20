@@ -57,7 +57,7 @@ export default function ProfileModal({ person, onClose }: Props) {
             const habit = HABITS.find((h) => h.name === name);
             if (!habit) return null;
             return (
-              <Heatmap key={name} habit={habit} seed={seed + i * 7} weeks={24} cell={14} />
+              <Heatmap key={name} habit={habit} seed={seed + i * 7} weeks={24} cell={14} readOnly />
             );
           })}
         </div>

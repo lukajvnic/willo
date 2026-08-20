@@ -12,7 +12,7 @@ export type Habit = {
   toggle: boolean;
 };
 
-export const WEEKS = 26;
+export const WEEKS = 52;
 
 export type RampName = "gold" | "clay" | "blue" | "moss" | "violet";
 
@@ -60,25 +60,96 @@ function noise(seed: number): number {
   return x - Math.floor(x);
 }
 
-export function buildGrid(seed: number, density: number, weeks: number = WEEKS): number[] {
+/** one day of a habit — the grid level and the amount behind it */
+export type Day = { level: number; amount: number };
+
+/**
+ * levels 1..4, each with the noise value that opens it and the slice of the goal
+ * it stands for. the ratios line up with `levelFor`, so an amount always maps
+ * back to the level its cell is painted with.
+ */
+const LEVELS = [
+  { at: 0.30, ratio: [0.10, 0.33] },
+  { at: 0.42, ratio: [0.34, 0.66] },
+  { at: 0.55, ratio: [0.67, 0.99] },
+  { at: 0.68, ratio: [1.00, 1.35] },
+];
+
+export function buildSeries(seed: number, habit: Habit, weeks: number = WEEKS): Day[] {
   const days = weeks * 7;
   return Array.from({ length: days }, (_, i) => {
     const n = noise(seed * 100 + i);
     // gentle upward trend — recent weeks a bit stronger
     const trend = 0.75 + (i / days) * 0.5;
-    const v = n * density * trend;
-    if (v < 0.3) return 0;
-    if (v < 0.42) return 1;
-    if (v < 0.55) return 2;
-    if (v < 0.68) return 3;
-    return 4;
+    const v = n * habit.density * trend;
+
+    let level = 0;
+    for (let l = LEVELS.length; l > 0; l--) {
+      if (v >= LEVELS[l - 1].at) {
+        level = l;
+        break;
+      }
+    }
+
+    if (level === 0) return { level: 0, amount: 0 };
+    if (habit.toggle) return { level, amount: 1 };
+
+    // spread v across the level's band so the amount reads as a real number
+    const band = LEVELS[level - 1];
+    const ceiling = LEVELS[level]?.at ?? 1;
+    const t = Math.min(1, (v - band.at) / (ceiling - band.at));
+    const [lo, hi] = band.ratio;
+    return { level, amount: Math.max(1, Math.round((lo + t * (hi - lo)) * habit.goal)) };
   });
+}
+
+export type Stats = {
+  /** consecutive logged days ending today */
+  streak: number;
+  done: number;
+  /** share of days logged, 0..1 */
+  rate: number;
+  /** mean and spread across logged days only — an unlogged day isn't a zero */
+  average: number;
+  deviation: number;
+};
+
+export function statsFor(days: Day[], today: number): Stats {
+  // days after today are still drawn, but they can't count toward anything
+  const upTo = today >= 0 ? days.slice(0, today + 1) : days;
+
+  let streak = 0;
+  for (let i = upTo.length - 1; i >= 0 && upTo[i].amount > 0; i--) streak++;
+
+  const logged = upTo.filter((d) => d.amount > 0);
+  const done = logged.length;
+  if (done === 0) return { streak: 0, done: 0, rate: 0, average: 0, deviation: 0 };
+
+  const average = logged.reduce((sum, d) => sum + d.amount, 0) / done;
+  const variance = logged.reduce((sum, d) => sum + (d.amount - average) ** 2, 0) / done;
+
+  return { streak, done, rate: done / upTo.length, average, deviation: Math.sqrt(variance) };
+}
+
+/** enough precision to be worth reading, never more */
+export function formatAmount(n: number): string {
+  if (Number.isInteger(n)) return String(n);
+  if (n >= 100) return String(Math.round(n));
+  if (n >= 10) return n.toFixed(1);
+  return n.toFixed(2);
 }
 
 const MONTHS = [
   "jan", "feb", "mar", "apr", "may", "jun",
   "jul", "aug", "sep", "oct", "nov", "dec",
 ];
+
+const WEEKDAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+
+/** "wed 12 mar" — short enough for a tooltip */
+export function formatDay(d: Date): string {
+  return `${WEEKDAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+}
 
 /** dates for every cell, column-first (col = week, row = Sun..Sat) */
 export function gridDates(weeks: number): Date[] {
