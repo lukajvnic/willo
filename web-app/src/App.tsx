@@ -8,7 +8,7 @@ import ProfileModal from "./components/ProfileModal";
 import { ME, toneFor } from "./lib/people";
 import Todo from "./components/Todo";
 import AvatarCreator from "./components/AvatarCreator";
-import { HABITS, type Habit } from "./lib/habits";
+import { HABITS, WEEKS, type Habit } from "./lib/habits";
 
 const NAV = ["habits", "to-do", "leaderboard", "social", "avatar"];
 
@@ -57,7 +57,7 @@ export default function App() {
               <Heatmap key={habit.name} habit={habit} seed={i + 1} />
             ))}
           </div>
-          <p className="foot">last 26 weeks</p>
+          <p className="foot">last {WEEKS} weeks</p>
         </>
       )}
 

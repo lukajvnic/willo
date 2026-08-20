@@ -1,7 +1,8 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Avatar from "./Avatar";
 import { Figure } from "../lib/avatarKit";
 import { BOARDS, type Board } from "../lib/leaderboards";
+import { ME } from "../lib/people";
 
 const PODIUM_ORDER = [1, 0, 2]; // silver, gold, bronze
 const SLIDE_MS = 460;
@@ -234,6 +235,60 @@ function Podium({ board }: { board: Board }) {
   );
 }
 
+/* every entry on the board, scrolling inside the stage frame */
+function RankList({ board, view }: { board: Board; view: "podium" | "list" }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const meRef = useRef<HTMLLIElement>(null);
+  const leader = board.entries[0]?.value ?? 0;
+
+  // centre the signed-in user whenever the list comes into view
+  useEffect(() => {
+    if (view !== "list") return;
+    const box = scrollRef.current;
+    const row = meRef.current;
+    if (!box || !row) return;
+    box.scrollTop = row.offsetTop - (box.clientHeight - row.offsetHeight) / 2;
+  }, [view, board]);
+
+  return (
+    <div className="ranks-frame">
+      <div className="ranks-head">
+        <span className="ranks-head-label">all ranks</span>
+        <span className="ranks-head-count">{board.entries.length} people</span>
+      </div>
+
+      <div className="ranks-scroll" ref={scrollRef}>
+        <ol className="ranks">
+          {board.entries.map((e, i) => {
+            const mine = e.name === ME.name;
+            // bar length is the entry's share of the leader's value
+            const pct = leader ? Math.max(4, (e.value / leader) * 100) : 4;
+
+            return (
+              <li
+                className="rank"
+                data-rank={i + 1}
+                data-me={mine ? "" : undefined}
+                ref={mine ? meRef : undefined}
+                key={e.name}
+              >
+                <span className="rank-bar" style={{ width: `${pct}%` }} />
+                <span className="rank-num">{i + 1}</span>
+                <Avatar name={e.name} tone={e.tone} size={26} />
+                <span className="rank-name">
+                  {e.name}
+                  {mine && <span className="rank-you">you</span>}
+                </span>
+                <span className="rank-value">{e.value.toLocaleString()}</span>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+    </div>
+  );
+}
+
 function BoardStage({ board, view }: { board: Board; view: "podium" | "list" }) {
   return (
     <div className="slide-inner" data-view={view}>
@@ -242,16 +297,7 @@ function BoardStage({ board, view }: { board: Board; view: "podium" | "list" }) 
       </div>
 
       <div className="stage-layer list-layer">
-        <ol className="ranks">
-          {board.entries.map((e, i) => (
-            <li className="rank" data-rank={i + 1} key={e.name}>
-              <span className="rank-num">{i + 1}</span>
-              <Avatar name={e.name} tone={e.tone} size={30} />
-              <span className="rank-name">{e.name}</span>
-              <span className="rank-value">{e.value.toLocaleString()}</span>
-            </li>
-          ))}
-        </ol>
+        <RankList board={board} view={view} />
       </div>
     </div>
   );
