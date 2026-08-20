@@ -1,19 +1,42 @@
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { formatAmount, formatDay, type Habit } from "../lib/habits";
 
 type Props = {
   habit: Habit;
   date: Date;
   value: number;
-  /** offsets within the panel, already clamped by the caller */
-  left: number;
+  /** cell centre and panel width, both relative to the panel */
+  centerX: number;
+  panelWidth: number;
   top: number;
   onSet: (value: number) => void;
 };
 
-export default function DayPopover({ habit, date, value, left, top, onSet }: Props) {
+const EDGE = 8;
+
+export default function DayPopover({
+  habit,
+  date,
+  value,
+  centerX,
+  panelWidth,
+  top,
+  onSet,
+}: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+  const [left, setLeft] = useState<number | null>(null);
+
+  // the popover sizes to its text, so it can only be clamped once it has been measured.
+  // a layout effect runs before paint, so the corrected position is the first one drawn.
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const w = el.offsetWidth;
+    const max = Math.max(EDGE, panelWidth - w - EDGE);
+    setLeft(Math.min(Math.max(centerX - w / 2, EDGE), max));
+  }, [centerX, panelWidth, value, editing, habit.unit]);
 
   const commit = () => {
     onSet(draft === "" ? 0 : Math.max(0, Math.round(Number(draft))));
@@ -21,7 +44,11 @@ export default function DayPopover({ habit, date, value, left, top, onSet }: Pro
   };
 
   return (
-    <div className="day-pop" style={{ left, top }}>
+    <div
+      className="day-pop"
+      ref={ref}
+      style={{ left: left ?? centerX, top, visibility: left === null ? "hidden" : undefined }}
+    >
       <span className="day-pop-date">{formatDay(date)}</span>
 
       {habit.toggle ? (

@@ -16,9 +16,6 @@ import {
 
 const DAY_LABELS = ["", "mon", "", "wed", "", "fri", ""];
 
-/** fixed so the caller can clamp it to the panel without measuring the popover first */
-const POP_WIDTH = 148;
-
 type Props = {
   habit: Habit;
   seed: number;
@@ -28,7 +25,7 @@ type Props = {
   readOnly?: boolean;
 };
 
-type Open = { index: number; left: number; top: number };
+type Open = { index: number; centerX: number; panelWidth: number; top: number };
 
 export default function Heatmap({ habit, seed, weeks = WEEKS, cell = 14, readOnly = false }: Props) {
   // day index -> amount, for days you've touched. everything else shows the seeded value
@@ -78,12 +75,13 @@ export default function Heatmap({ habit, seed, weeks = WEEKS, cell = 14, readOnl
 
     const p = panel.getBoundingClientRect();
     const c = el.getBoundingClientRect();
-    // centred on the cell, but kept inside the panel — the panel clips its overflow
-    const left = Math.min(
-      Math.max(c.left + c.width / 2 - p.left - POP_WIDTH / 2, 8),
-      p.width - POP_WIDTH - 8,
-    );
-    setOpen({ index: i, left, top: c.top - p.top - 8 });
+    // the popover clamps itself once measured — it sizes to its own text
+    setOpen({
+      index: i,
+      centerX: c.left + c.width / 2 - p.left,
+      panelWidth: p.width,
+      top: c.top - p.top - 8,
+    });
   };
 
   const rampVars = {
@@ -172,7 +170,8 @@ export default function Heatmap({ habit, seed, weeks = WEEKS, cell = 14, readOnl
           habit={habit}
           date={dates[open.index]}
           value={days[open.index].amount}
-          left={open.left}
+          centerX={open.centerX}
+          panelWidth={open.panelWidth}
           top={open.top}
           onSet={(v) => setEdits((e) => ({ ...e, [open.index]: v }))}
         />

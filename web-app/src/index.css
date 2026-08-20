@@ -242,14 +242,16 @@ button { font: inherit; color: inherit; }
 .day-pop {
   position: absolute;
   z-index: 5;
-  width: 148px;
+  /* sizes to its text; DayPopover measures it and clamps it inside the panel */
+  width: max-content;
   /* `top` is the cell's top edge less a small gap; this lifts it clear */
   transform: translateY(-100%);
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
+  text-align: center;
   gap: 3px;
-  padding: 8px 11px 8px;
+  padding: 8px 12px;
   border-radius: 10px;
   background: var(--dune-lift);
   border: 1px solid rgba(255, 255, 255, 0.13);
