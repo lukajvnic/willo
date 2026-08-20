@@ -1,21 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { KITS, BASE_COLORS, VIEW, drawBody, drawHead, type Category, type Kit } from "../lib/avatarKit";
+import { KITS, BASE_COLORS, VIEW, FIGURE_SHIFT, drawBody, drawHead, type Category, type Kit } from "../lib/avatarKit";
 import PhotoCropper from "./PhotoCropper";
 
 type Picks = Record<Category, number>;
-type Tints = Record<Category, string>;
 
-const START_PICK: Picks = { accessory: 0 };
-const START_TINT = Object.fromEntries(KITS.map((k) => [k.key, k.fallback])) as Tints;
-
-type Look = { name: string; wear: string; tint: string };
-
-const LOOKS: Look[] = [
-  { name: "streetwear", wear: "cap", tint: "#B4674C" },
-  { name: "office", wear: "shades", tint: "#2E2C2A" },
-  { name: "beach", wear: "flowers", tint: "#B4674C" },
-  { name: "royal", wear: "crown", tint: "#C8A24A" },
-];
+const START_PICK = Object.fromEntries(KITS.map((k) => [k.key, 0])) as Picks;
+const START_DIR = Object.fromEntries(KITS.map((k) => [k.key, 1])) as Record<Category, number>;
 
 const OK_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
@@ -32,8 +22,7 @@ export default function AvatarCreator() {
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [skin, setSkin] = useState(BASE_COLORS[0]);
   const [pick, setPick] = useState<Picks>(START_PICK);
-  const [tint, setTint] = useState<Tints>(START_TINT);
-  const [dir, setDir] = useState<Record<Category, number>>({ accessory: 1 });
+  const [dir, setDir] = useState<Record<Category, number>>(START_DIR);
   const [hot, setHot] = useState<Category | null>(null);
   const [dropping, setDropping] = useState(false);
   const [note, setNote] = useState("");
@@ -63,26 +52,12 @@ export default function AvatarCreator() {
     setPick((p) => ({ ...p, [kit.key]: (p[kit.key] + d + kit.items.length) % kit.items.length }));
   };
 
-  const wear = (look: Look) => {
-    const accessory = Math.max(0, KITS[0].items.findIndex((i) => i.id === look.wear));
-    setPick({ accessory });
-    setTint({ accessory: look.tint });
-    setDir({ accessory: 1 });
-    say(`${look.name} on`);
-  };
-
   const shuffle = () => {
     setPick(Object.fromEntries(KITS.map((k) => [k.key, Math.floor(Math.random() * k.items.length)])) as Picks);
-    setTint(
-      Object.fromEntries(
-        KITS.map((k) => [k.key, k.colors[Math.floor(Math.random() * k.colors.length)]]),
-      ) as Tints,
-    );
   };
 
   const reset = () => {
     setPick(START_PICK);
-    setTint(START_TINT);
     say("back to basics");
   };
 
@@ -241,7 +216,7 @@ export default function AvatarCreator() {
                   data-strip="1"
                   className="ac-lit"
                   x={14}
-                  y={band[0]}
+                  y={band[0] + FIGURE_SHIFT}
                   width={VIEW.w - 28}
                   height={band[1] - band[0]}
                   rx={16}
@@ -249,12 +224,14 @@ export default function AvatarCreator() {
                 />
               )}
 
-              {drawBody(skin)}
+              <g transform={`translate(0,${FIGURE_SHIFT})`}>
+                {drawBody(skin, worn.shirt)}
 
-              {drawHead(photo, skin)}
+                {drawHead(photo, skin)}
 
-              <g key={`acc-${worn.accessory.id}`} className="ac-pop" data-dir={dir.accessory}>
-                {worn.accessory.paint(tint.accessory, skin)}
+                <g key={`head-${worn.head.id}`} className="ac-pop" data-dir={dir.head}>
+                  {worn.head.paint(skin)}
+                </g>
               </g>
             </svg>
           </div>
@@ -324,30 +301,9 @@ export default function AvatarCreator() {
                     {pick[kit.key] + 1}/{kit.items.length}
                   </span>
                 </div>
-                <div className="ac-dots" role="group" aria-label={`${kit.label} colour`}>
-                  {kit.colors.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      className="ac-dot"
-                      style={{ background: c }}
-                      data-on={c === tint[kit.key]}
-                      onClick={() => setTint((p) => ({ ...p, [kit.key]: c }))}
-                      aria-label={`${kit.label} in ${c}`}
-                    />
-                  ))}
-                </div>
               </li>
             ))}
           </ul>
-
-          <div className="ac-looks">
-            {LOOKS.map((look) => (
-              <button key={look.name} type="button" className="ac-chip" onClick={() => wear(look)}>
-                {look.name}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 
