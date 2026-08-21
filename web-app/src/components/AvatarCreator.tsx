@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { KITS, BASE_COLORS, VIEW, FIGURE_SHIFT, drawBody, drawHead, type Category, type Kit } from "../lib/avatarKit";
+import { useAvatarState, START_PICK } from "../lib/AvatarContext";
 import PhotoCropper from "./PhotoCropper";
 
 type Picks = Record<Category, number>;
 
-const START_PICK = Object.fromEntries(KITS.map((k) => [k.key, 0])) as Picks;
 const START_DIR = Object.fromEntries(KITS.map((k) => [k.key, 1])) as Record<Category, number>;
 
 const OK_TYPES = ["image/png", "image/jpeg", "image/webp"];
@@ -18,10 +18,8 @@ function Chevron({ back }: { back?: boolean }) {
 }
 
 export default function AvatarCreator() {
-  const [photo, setPhoto] = useState<string | null>(null);
+  const { photo, setPhoto, skin, setSkin, pick, setPick, worn } = useAvatarState();
   const [cropSrc, setCropSrc] = useState<string | null>(null);
-  const [skin, setSkin] = useState(BASE_COLORS[0]);
-  const [pick, setPick] = useState<Picks>(START_PICK);
   const [dir, setDir] = useState<Record<Category, number>>(START_DIR);
   const [hot, setHot] = useState<Category | null>(null);
   const [dropping, setDropping] = useState(false);
@@ -39,11 +37,6 @@ export default function AvatarCreator() {
   }, []);
 
   useEffect(() => () => window.clearTimeout(noteTimer.current), []);
-
-  const worn = useMemo(
-    () => Object.fromEntries(KITS.map((k) => [k.key, k.items[pick[k.key]]])) as Record<Category, Kit["items"][number]>,
-    [pick],
-  );
 
   /* ---------- picking ---------- */
 

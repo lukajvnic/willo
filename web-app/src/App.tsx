@@ -3,20 +3,21 @@ import Heatmap from "./components/Heatmap";
 import NewHabit from "./components/NewHabit";
 import Leaderboard from "./components/Leaderboard";
 import Social from "./components/Social";
-import Avatar from "./components/Avatar";
 import ProfileModal from "./components/ProfileModal";
-import { ME, toneFor } from "./lib/people";
+import { ME } from "./lib/people";
 import Todo from "./components/Todo";
-import AvatarCreator from "./components/AvatarCreator";
+import { AvatarPreview } from "./lib/avatarKit";
+import { useAvatarState } from "./lib/AvatarContext";
 import { HABITS, WEEKS, type Habit } from "./lib/habits";
 
-const NAV = ["habits", "to-do", "leaderboard", "social", "avatar"];
+const NAV = ["habits", "to-do", "leaderboard", "social"];
 
 export default function App() {
   const [tab, setTab] = useState("habits");
   const [habits, setHabits] = useState<Habit[]>(HABITS);
   const [adding, setAdding] = useState(false);
   const [showMe, setShowMe] = useState(false);
+  const { photo, skin, worn } = useAvatarState();
 
   return (
     <main className="page" data-tab={tab}>
@@ -42,7 +43,7 @@ export default function App() {
           onClick={() => setShowMe(true)}
           aria-label="your account"
         >
-          <Avatar name={ME.name} tone={toneFor(ME.name)} size={34} />
+          <AvatarPreview tone={skin} photo={photo} head={worn.head} shirt={worn.shirt} size={34} crop />
         </button>
       </div>
 
@@ -66,8 +67,6 @@ export default function App() {
       {tab === "social" && <Social />}
 
       {tab === "to-do" && <Todo />}
-
-      {tab === "avatar" && <AvatarCreator />}
 
       {adding && (
         <NewHabit

@@ -229,6 +229,43 @@ export function Figure({ tone, size }: { tone: string; size: number }) {
   );
 }
 
+/** a square crop tight on the head — full canvas width for headroom (so tall hats
+ * still fit) but cut short below the chin, for spots too small to read a full body */
+const FACE_CROP: Box = { x: 40, y: 0, w: 220, h: 220 };
+
+/** a small stand-alone render of the fully customized figure — tone, uploaded head
+ * photo, and worn items — for spots that only hold the shared avatar state, like
+ * the nav-bar "me" button and the profile header. `crop` swaps the full-body frame
+ * for a square headshot, better suited to a tiny circular icon. */
+export function AvatarPreview({
+  tone,
+  photo,
+  head,
+  shirt,
+  size,
+  crop = false,
+}: {
+  tone: string;
+  photo: string | null;
+  head: Item;
+  shirt: Item;
+  size: number;
+  crop?: boolean;
+}) {
+  const box = crop ? FACE_CROP : { x: 0, y: 0, w: VIEW.w, h: VIEW.h };
+  const h = size;
+  const w = crop ? size : Math.round((VIEW.w / VIEW.h) * h);
+  return (
+    <svg width={w} height={h} viewBox={`${box.x} ${box.y} ${box.w} ${box.h}`} aria-hidden>
+      <g transform={`translate(0,${FIGURE_SHIFT})`}>
+        {drawBody(tone, shirt)}
+        {drawHead(photo, tone)}
+        {head.paint(tone)}
+      </g>
+    </svg>
+  );
+}
+
 /* ---------- the kit ---------- */
 
 export const KITS: Kit[] = [

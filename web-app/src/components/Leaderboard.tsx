@@ -220,7 +220,9 @@ function Podium({ board }: { board: Board }) {
         return (
           <div className="plinth" data-rank={rank} key={e.name}>
             <div className="plinth-top">
-              <Figure tone={e.tone} size={rank === 1 ? 78 : 62} />
+              <span className="plinth-figure">
+                <Figure tone={e.tone} size={rank === 1 ? 78 : 62} />
+              </span>
               <span className="plinth-name">{e.name}</span>
               <span className="plinth-value">
                 {e.value.toLocaleString()} {board.unit}
