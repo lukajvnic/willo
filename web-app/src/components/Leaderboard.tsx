@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import Avatar from "./Avatar";
+import { Figure } from "../lib/avatarKit";
 import { BOARDS, type Board } from "../lib/leaderboards";
 import { ME } from "../lib/people";
 
@@ -219,7 +220,9 @@ function Podium({ board }: { board: Board }) {
         return (
           <div className="plinth" data-rank={rank} key={e.name}>
             <div className="plinth-top">
-              <Avatar name={e.name} tone={e.tone} size={rank === 1 ? 58 : 46} />
+              <span className="plinth-figure">
+                <Figure tone={e.tone} size={rank === 1 ? 78 : 62} />
+              </span>
               <span className="plinth-name">{e.name}</span>
               <span className="plinth-value">
                 {e.value.toLocaleString()} {board.unit}

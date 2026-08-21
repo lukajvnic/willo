@@ -744,6 +744,15 @@ div.today .today-line {
   margin-bottom: 14px;
 }
 
+/* soft white glow behind the figure so it reads against the black stage */
+.plinth-figure {
+  display: block;
+  line-height: 0;
+  filter:
+    drop-shadow(0 0 5px rgba(255, 255, 255, 0.55))
+    drop-shadow(0 0 16px rgba(255, 255, 255, 0.32));
+}
+
 .plinth-name {
   font-size: 13.5px;
   color: var(--ink);
@@ -1243,6 +1252,29 @@ div.today .today-line {
   gap: 16px;
   margin-bottom: 22px;
 }
+
+.profile-avatar-btn {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  background: transparent;
+  cursor: pointer;
+  line-height: 0;
+  box-shadow: 0 0 0 1px var(--line);
+  transition: box-shadow 140ms ease, transform 140ms ease;
+}
+
+.profile-avatar-btn svg { display: block; width: 100%; height: 100%; }
+
+.profile-avatar-btn:hover {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3), 0 0 14px 2px rgba(255, 255, 255, 0.28);
+}
+
+.profile-avatar-btn:active { transform: scale(0.96); }
 
 .profile-name { margin: 0; font-size: 19px; font-weight: 550; letter-spacing: -0.01em; }
 .profile-handle { margin: 2px 0 0; font-size: 13px; color: var(--ink-faint); }
@@ -2165,18 +2197,29 @@ div.today .today-line {
 
 .me {
   flex: none;
+  width: 34px;
+  height: 34px;
   padding: 0;
   border: 0;
   border-radius: 50%;
+  overflow: hidden;
   background: transparent;
   cursor: pointer;
   line-height: 0;
-  box-shadow: 0 0 0 1px var(--line);
+  box-shadow:
+    0 0 0 1px var(--line),
+    0 0 8px 1px rgba(255, 255, 255, 0.35),
+    0 0 18px 3px rgba(255, 255, 255, 0.16);
   transition: box-shadow 140ms ease, transform 140ms ease;
 }
 
+.me svg { display: block; width: 100%; height: 100%; }
+
 .me:hover {
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.22);
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.3),
+    0 0 10px 2px rgba(255, 255, 255, 0.5),
+    0 0 22px 4px rgba(255, 255, 255, 0.24);
 }
 
 .me:active { transform: scale(0.96); }
@@ -2301,6 +2344,15 @@ div.today .today-line {
   gap: 26px;
   align-items: start;
 }
+
+/* embedded in the profile modal there's no room for the two-column layout
+ * (the modal's own width, not the viewport, is what's tight here) */
+.modal .maker-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+}
+
+.modal .ac-rig { max-width: 420px; }
 
 /* ---------- the stage ---------- */
 
@@ -2564,6 +2616,73 @@ div.today .today-line {
   font-size: 12.5px;
   color: var(--ink-soft);
 }
+
+.ac-crop-veil {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(10, 9, 8, 0.72);
+  backdrop-filter: blur(2px);
+  z-index: 40;
+  padding: 20px;
+}
+
+.ac-crop-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 22px;
+  border-radius: var(--radius-panel);
+  background: var(--dune);
+  border: 1px solid var(--line);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+.ac-crop-title {
+  margin: 0;
+  align-self: flex-start;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.ac-crop-box {
+  position: relative;
+  width: 260px;
+  height: 260px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--black);
+  cursor: grab;
+  touch-action: none;
+}
+
+.ac-crop-box:active { cursor: grabbing; }
+
+.ac-crop-box img {
+  position: absolute;
+  left: 0;
+  top: 0;
+  max-width: none;
+  user-select: none;
+  pointer-events: none;
+}
+
+.ac-crop-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 999px rgba(18, 17, 16, 0.55);
+  outline: 2px solid rgba(255, 255, 255, 0.75);
+  outline-offset: -2px;
+  pointer-events: none;
+}
+
+.ac-crop-zoom { width: 260px; accent-color: var(--ink); }
+
+.ac-crop-actions { display: flex; gap: 8px; align-self: flex-end; }
 
 @media (max-width: 860px) {
   .maker-grid { grid-template-columns: minmax(0, 1fr); gap: 20px; }

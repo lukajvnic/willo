@@ -1,36 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { KITS, SKINS, VIEW, drawBody, drawHead, type Category, type Kit } from "../lib/avatarKit";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { KITS, BASE_COLORS, VIEW, FIGURE_SHIFT, drawBody, drawHead, type Category, type Kit } from "../lib/avatarKit";
+import { useAvatarState, START_PICK } from "../lib/AvatarContext";
+import PhotoCropper from "./PhotoCropper";
 
 type Picks = Record<Category, number>;
-type Tints = Record<Category, string>;
 
-const START_PICK: Picks = { accessory: 0, shirt: 0, pants: 0, shoes: 0 };
-const START_TINT = Object.fromEntries(KITS.map((k) => [k.key, k.fallback])) as Tints;
-
-type Look = { name: string; wear: Record<Category, string>; tint: Tints };
-
-const LOOKS: Look[] = [
-  {
-    name: "streetwear",
-    wear: { accessory: "cap", shirt: "hoodie", pants: "sweats", shoes: "hitops" },
-    tint: { accessory: "#B4674C", shirt: "#2E2C2A", pants: "#3B5064", shoes: "#E4DED4" },
-  },
-  {
-    name: "office",
-    wear: { accessory: "shades", shirt: "dress", pants: "formal", shoes: "loafers" },
-    tint: { accessory: "#2E2C2A", shirt: "#D6CCBE", pants: "#2E2C2A", shoes: "#7E6A5A" },
-  },
-  {
-    name: "beach",
-    wear: { accessory: "flowers", shirt: "tank", pants: "shorts", shoes: "sandals" },
-    tint: { accessory: "#B4674C", shirt: "#D6CCBE", pants: "#5E7A6C", shoes: "#B4674C" },
-  },
-  {
-    name: "royal",
-    wear: { accessory: "crown", shirt: "jacket", pants: "formal", shoes: "boots" },
-    tint: { accessory: "#C8A24A", shirt: "#6A5B78", pants: "#2E2C2A", shoes: "#2E2C2A" },
-  },
-];
+const START_DIR = Object.fromEntries(KITS.map((k) => [k.key, 1])) as Record<Category, number>;
 
 const OK_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
@@ -43,11 +18,9 @@ function Chevron({ back }: { back?: boolean }) {
 }
 
 export default function AvatarCreator() {
-  const [photo, setPhoto] = useState<string | null>(null);
-  const [skin, setSkin] = useState(SKINS[1]);
-  const [pick, setPick] = useState<Picks>(START_PICK);
-  const [tint, setTint] = useState<Tints>(START_TINT);
-  const [dir, setDir] = useState<Record<Category, number>>({ accessory: 1, shirt: 1, pants: 1, shoes: 1 });
+  const { photo, setPhoto, skin, setSkin, pick, setPick, worn } = useAvatarState();
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [dir, setDir] = useState<Record<Category, number>>(START_DIR);
   const [hot, setHot] = useState<Category | null>(null);
   const [dropping, setDropping] = useState(false);
   const [note, setNote] = useState("");
@@ -65,11 +38,6 @@ export default function AvatarCreator() {
 
   useEffect(() => () => window.clearTimeout(noteTimer.current), []);
 
-  const worn = useMemo(
-    () => Object.fromEntries(KITS.map((k) => [k.key, k.items[pick[k.key]]])) as Record<Category, Kit["items"][number]>,
-    [pick],
-  );
-
   /* ---------- picking ---------- */
 
   const step = (kit: Kit, d: number) => {
@@ -77,29 +45,12 @@ export default function AvatarCreator() {
     setPick((p) => ({ ...p, [kit.key]: (p[kit.key] + d + kit.items.length) % kit.items.length }));
   };
 
-  const wear = (look: Look) => {
-    setPick(
-      Object.fromEntries(
-        KITS.map((k) => [k.key, Math.max(0, k.items.findIndex((i) => i.id === look.wear[k.key]))]),
-      ) as Picks,
-    );
-    setTint(look.tint);
-    setDir({ accessory: 1, shirt: 1, pants: 1, shoes: 1 });
-    say(`${look.name} on`);
-  };
-
   const shuffle = () => {
     setPick(Object.fromEntries(KITS.map((k) => [k.key, Math.floor(Math.random() * k.items.length)])) as Picks);
-    setTint(
-      Object.fromEntries(
-        KITS.map((k) => [k.key, k.colors[Math.floor(Math.random() * k.colors.length)]]),
-      ) as Tints,
-    );
   };
 
   const reset = () => {
     setPick(START_PICK);
-    setTint(START_TINT);
     say("back to basics");
   };
 
@@ -111,10 +62,7 @@ export default function AvatarCreator() {
       if (!OK_TYPES.includes(file.type)) return say("png or jpg only");
       if (file.size > 8_000_000) return say("that one's over 8mb");
       const reader = new FileReader();
-      reader.onload = () => {
-        setPhoto(String(reader.result));
-        say("head swapped");
-      };
+      reader.onload = () => setCropSrc(String(reader.result));
       reader.onerror = () => say("couldn't read that file");
       reader.readAsDataURL(file);
     },
@@ -196,7 +144,6 @@ export default function AvatarCreator() {
 
   const band = hot ? KITS.find((k) => k.key === hot)?.band : null;
   const summary = KITS.map((k) => `${k.label}: ${worn[k.key].name}`).join(", ");
-  const bib = worn.pants.over;
 
   return (
     <section className="panel maker">
@@ -252,8 +199,8 @@ export default function AvatarCreator() {
             >
               <defs>
                 <radialGradient id="ac-glow" cx="50%" cy="30%" r="70%">
-                  <stop offset="0%" stopColor="#4B4744" />
-                  <stop offset="100%" stopColor="#201E1D" />
+                  <stop offset="0%" stopColor="#615C58" />
+                  <stop offset="100%" stopColor="#332F2D" />
                 </radialGradient>
               </defs>
               <rect x={0} y={0} width={VIEW.w} height={VIEW.h} rx={24} fill="url(#ac-glow)" />
@@ -262,7 +209,7 @@ export default function AvatarCreator() {
                   data-strip="1"
                   className="ac-lit"
                   x={14}
-                  y={band[0]}
+                  y={band[0] + FIGURE_SHIFT}
                   width={VIEW.w - 28}
                   height={band[1] - band[0]}
                   rx={16}
@@ -270,27 +217,14 @@ export default function AvatarCreator() {
                 />
               )}
 
-              {drawBody(skin)}
+              <g transform={`translate(0,${FIGURE_SHIFT})`}>
+                {drawBody(skin, worn.shirt)}
 
-              <g key={`pants-${worn.pants.id}`} className="ac-pop" data-dir={dir.pants}>
-                {worn.pants.paint(tint.pants, skin)}
-              </g>
-              <g key={`shirt-${worn.shirt.id}`} className="ac-pop" data-dir={dir.shirt}>
-                {worn.shirt.paint(tint.shirt, skin)}
-              </g>
-              {bib && (
-                <g key={`bib-${worn.pants.id}`} className="ac-pop" data-dir={dir.pants}>
-                  {bib(tint.pants)}
+                {drawHead(photo, skin)}
+
+                <g key={`head-${worn.head.id}`} className="ac-pop" data-dir={dir.head}>
+                  {worn.head.paint(skin)}
                 </g>
-              )}
-              <g key={`shoes-${worn.shoes.id}`} className="ac-pop" data-dir={dir.shoes}>
-                {worn.shoes.paint(tint.shoes, skin)}
-              </g>
-
-              {drawHead(photo, skin)}
-
-              <g key={`acc-${worn.accessory.id}`} className="ac-pop" data-dir={dir.accessory}>
-                {worn.accessory.paint(tint.accessory, skin)}
               </g>
             </svg>
           </div>
@@ -318,8 +252,8 @@ export default function AvatarCreator() {
                   "png or jpg — or drag one onto the avatar"
                 )}
               </p>
-              <div className="ac-dots" role="group" aria-label="skin tone">
-                {SKINS.map((s) => (
+              <div className="ac-dots" role="group" aria-label="avatar colour">
+                {BASE_COLORS.map((s) => (
                   <button
                     key={s}
                     type="button"
@@ -327,7 +261,7 @@ export default function AvatarCreator() {
                     style={{ background: s }}
                     data-on={s === skin}
                     onClick={() => setSkin(s)}
-                    aria-label={`skin tone ${s}`}
+                    aria-label={`avatar colour ${s}`}
                   />
                 ))}
               </div>
@@ -360,30 +294,9 @@ export default function AvatarCreator() {
                     {pick[kit.key] + 1}/{kit.items.length}
                   </span>
                 </div>
-                <div className="ac-dots" role="group" aria-label={`${kit.label} colour`}>
-                  {kit.colors.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      className="ac-dot"
-                      style={{ background: c }}
-                      data-on={c === tint[kit.key]}
-                      onClick={() => setTint((p) => ({ ...p, [kit.key]: c }))}
-                      aria-label={`${kit.label} in ${c}`}
-                    />
-                  ))}
-                </div>
               </li>
             ))}
           </ul>
-
-          <div className="ac-looks">
-            {LOOKS.map((look) => (
-              <button key={look.name} type="button" className="ac-chip" onClick={() => wear(look)}>
-                {look.name}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 
@@ -404,6 +317,18 @@ export default function AvatarCreator() {
           {note}
         </span>
       </div>
+
+      {cropSrc && (
+        <PhotoCropper
+          src={cropSrc}
+          onCancel={() => setCropSrc(null)}
+          onConfirm={(dataUrl) => {
+            setPhoto(dataUrl);
+            setCropSrc(null);
+            say("head swapped");
+          }}
+        />
+      )}
     </section>
   );
 }
